@@ -26,7 +26,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PDF_URL =
             "http://www.cs.jhu.edu/~lixints/class/auto/HW1.pdf";
-    private Bitmap bitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,10 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
                 b = null;
             }
-
             return b;
-
-
         }
     }
 }
