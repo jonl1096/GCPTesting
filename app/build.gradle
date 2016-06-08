@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 23
@@ -25,18 +26,21 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.android.support:design:23.4.0'
 
-    compile 'com.google.android.gms:play-services:9.0.2'
+//    compile 'com.google.android.gms:play-services:9.0.2'
+    compile 'com.google.android.gms:play-services:8.3.0'
 
     // http://mvnrepository.com/artifact/com.google.code.gson/gson
     compile 'com.google.code.gson:gson:2.3.1'
 
-    // http://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.7.4'
+//    // http://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+//    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.7.4'
+//
+//    // http://mvnrepository.com/artifact/com.squareup.retrofit/retrofit
+//    compile group: 'com.squareup.retrofit', name: 'retrofit', version: '1.9.0'
+//
+//    // http://mvnrepository.com/artifact/com.netflix.rxjava/rxjava-core
+//    compile group: 'com.netflix.rxjava', name: 'rxjava-core', version: '0.20.7'
 
-    // http://mvnrepository.com/artifact/com.squareup.retrofit/retrofit
-    compile group: 'com.squareup.retrofit', name: 'retrofit', version: '1.9.0'
-
-    // http://mvnrepository.com/artifact/com.netflix.rxjava/rxjava-core
-    compile group: 'com.netflix.rxjava', name: 'rxjava-core', version: '0.20.7'
+    compile 'com.google.api-client:google-api-client:1.19.1'
 
 }
