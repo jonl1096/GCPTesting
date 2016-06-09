@@ -10,5 +10,5 @@
     <string name="signed_out">Signed out</string>
 
     <string name="server_client_id">941824563961-ro45jsu2921p0a6ipo13ucmbuvta84qa.apps.googleusercontent.com</string>
-    <string name="token_button_text">Get Token</string>
+    <string name="get_printers_button_text">Get Printers</string>
 </resources>

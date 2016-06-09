@@ -55,8 +55,8 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/token_button_text"
-        android:id="@+id/tokenButton"
+        android:text="@string/get_printers_button_text"
+        android:id="@+id/getPrintersButton"
         android:layout_below="@+id/disconnect_button"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="59dp" />

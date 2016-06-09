@@ -7,21 +7,14 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.Printer;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -32,10 +25,14 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.net.URL;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.OnConnectionFailedListener,
@@ -49,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements
     private static final int RC_SIGN_IN = 9001;
 
     private static final int REQ_SIGN_IN_REQUIRED = 55664;
+    private static final String GCP_URL = "https://www.google.com/cloudprint";
     private String mAccountName;
 
     private GoogleApiClient mGoogleApiClient;
@@ -62,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ImageLoader im = new ImageLoader();
+        PdfLoader im = new PdfLoader();
         im.execute(IMAGE_URL);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -88,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements
         findViewById(R.id.sign_in_button).setOnClickListener(this);
         findViewById(R.id.sign_out_button).setOnClickListener(this);
         findViewById(R.id.disconnect_button).setOnClickListener(this);
+        findViewById(R.id.getPrintersButton).setOnClickListener(this);
 
         // [START configure_signin]
         // Configure sign-in to request the user's ID, email address, and basic
@@ -167,6 +166,9 @@ public class MainActivity extends AppCompatActivity implements
         if (result.isSuccess()) {
             // Signed in successfully, show authenticated UI.
             GoogleSignInAccount acct = result.getSignInAccount();
+            // Saving the token in SharedPreferences
+            String idToken = acct.getIdToken();
+            SettingsUtil.setUserAuthToken(this, idToken);
             mStatusTextView.setText(getString(R.string.signed_in_fmt, acct.getDisplayName()));
             updateUI(true);
         } else {
@@ -238,13 +240,13 @@ public class MainActivity extends AppCompatActivity implements
     private void updateUI(boolean signedIn) {
         if (signedIn) {
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
-//            findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
 //            findViewById(R.id.sign_out_and_disconnect).setVisibility(View.VISIBLE);
         } else {
             mStatusTextView.setText(R.string.signed_out);
 
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
-//            findViewById(R.id.sign_out_button).setVisibility(View.GONE);
+            findViewById(R.id.sign_out_button).setVisibility(View.GONE);
 //            findViewById(R.id.sign_out_and_disconnect).setVisibility(View.GONE);
         }
     }
@@ -261,39 +263,55 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.disconnect_button:
                 revokeAccess();
                 break;
-            case R.id.tokenButton:
-                RetrieveTokenTask retriever = new RetrieveTokenTask();
-                retriever.execute(mAccountName);
+            case R.id.getPrintersButton:
+                getPrinters();
                 break;
         }
     }
-    private class RetrieveTokenTask extends AsyncTask<String, Void, String> {
 
-        @Override
-        protected String doInBackground(String... params) {
-            String accountName = params[0];
-            String scopes = "oauth2:profile email";
-            String token = null;
-            try {
-                token = GoogleAuthUtil.getToken(getApplicationContext(), accountName, scopes);
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage());
-            } catch (UserRecoverableAuthException e) {
-                startActivityForResult(e.getIntent(), REQ_SIGN_IN_REQUIRED);
-            } catch (GoogleAuthException e) {
-                Log.e(TAG, e.getMessage());
-            }
-            return token;
-        }
+    public void getPrinters() {
+        GcpManager manager = new GcpManager();
 
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-//            ((TextView) findViewById(R.id.token_value)).setText("Token Value: " + s);
-        }
+        manager.setMethod("GET")
+                .setUri(GCP_URL)
+                .setService("search")
+                .setParam("Authorization", "Oauth " + SettingsUtil.getUserAuthToken(this))
+                .setParam("connection_status", "ALL");
+        GcpTask gcpTask = new GcpTask();
+        gcpTask.execute(manager);
     }
 
-    private class ImageLoader extends AsyncTask<String, Void, Bitmap> {
+    private class GcpTask extends AsyncTask<GcpManager, Void, List<Printer>> {
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected List<Printer> doInBackground(GcpManager... params) {
+            Gson gson = new Gson();
+            String content = HttpUtil.getData(params[0], MainActivity.this);
+            Type type = new TypeToken<List<Printer>>(){}.getType();
+            List<Printer> printerList = gson.fromJson(content, type);
+            return printerList;
+        }
+
+        @Override
+        protected void onPostExecute(List<Printer> result) {
+
+//            tasks.remove(this);
+//            if (tasks.size() == 0) {
+//                pb.setVisibility(View.INVISIBLE);
+//            }
+//
+//            updateDisplay(result);
+
+        }
+
+    }
+
+    private class PdfLoader extends AsyncTask<String, Void, Bitmap> {
 
         @Override
         protected void onPreExecute() {
